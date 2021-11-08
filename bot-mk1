@@ -1,0 +1,96 @@
+import sys
+import time
+import random
+import datetime
+import telepot
+from datetim0e import datetime
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+from youtubesearchpython import *
+from nba_api.stats.static import teams
+import wikipedia
+
+bot = telepot.Bot('2038918771:AAEIA3RCL8ZqHjalfvmJJADre1zeujCVKUQ')
+
+
+def handle(msg):
+    chat_id = msg['chat']['id']
+    command = msg['text']
+    command = command.lower()
+    print(msg)
+    print('Got command: %s' % command)
+    if command == 'hi':
+        bot.sendMessage(chat_id, 'hello to you dear {0}'.format(msg['from']['first_name']))
+    elif command == r"time":
+        bot.sendMessage(chat_id, 'the hour is: {0}'.format(datetime.fromtimestamp(msg['date'])))
+    elif 'random' in command:
+        x = int(command[command.find('random') + 7: command.find(',')])
+        y = int(command[command.find(',') + 1::])
+        bot.sendMessage(chat_id, random.randint(x, y))
+    elif command == 'help':
+        bot.sendMessage(chat_id, "Commands: hi, time, random ")
+    elif command == 'nba':
+        bot.sendMessage(chat_id, 'Functions: PlayerStats (name), (year), TOP10')
+    elif 'playerstats' in command:
+        player = command[command.find('playerstats') + 12: command.find(',')]
+        player = player[:-1].title()
+        print(player)
+        year = command[command.find(',') + 1::]
+        print(year)
+        try:
+            url = 'https://www.basketball-reference.com/leagues/NBA_{}_per_game.html'.format(year)
+            r = requests.get(url)
+            r_html = r.text
+            soup = BeautifulSoup(r_html, 'html.parser')
+
+            table = soup.find_all(class_="full_table")
+
+            """ Extracting List of column names"""
+            head = soup.find(class_="thead")
+            column_names_raw = [head.text for item in head][0]
+            column_names_polished = column_names_raw.replace("\n", ",").split(",")[2:-1]
+
+            # bot.sendMessage(chat_id, column_names_polished)
+            print(column_names_polished)
+
+            """Extracting full list of player_data"""
+            players = []
+
+            for i in range(len(table)):
+
+                player_ = []
+
+                for td in table[i].find_all("td"):
+                    player_.append(td.text.lower())
+
+                players.append(player_)
+
+            df = pd.DataFrame(players, columns=column_names_polished).set_index("Player")
+            # cleaning the player's name from occasional special characters
+            df.index = df.index.str.replace('*', '')
+            index2 = 0
+            message = f'Player: {player.capitalize()}\n'
+            for stat in column_names_polished[1:]:
+                message += stat + ': ' + df.loc[player.lower()][index2] + '\n'
+                index2 = index2 + 1
+            bot.sendMessage(chat_id, message)
+        except:
+            bot.sendMessage(chat_id, "No player {0} in {1}".format(player, year))
+    elif command == 'top10':
+        videosSearch = CustomSearch('NBA Top 10 Plays Of The Night', VideoSortOrder.uploadDate, limit=1)
+        bot.sendMessage(chat_id, videosSearch.result()['result'][0]['link'])
+    elif 'team' in command:
+        team = command[command.find('team') + 5::].title()
+        print(team)
+        bot.sendMessage(chat_id,wikipedia.summary(team, sentences= 3))
+        print(wikipedia.summary(team))
+    else:
+        bot.sendMessage(chat_id, "Commands: hi, time, random ")
+
+
+bot.message_loop(handle)
+print('I am listening ...')
+
+while 1:
+    time.sleep(10)
