@@ -1,0 +1,6 @@
+from os import system as cmd
+
+packages = ['pandas', 'scikit-learn', 'numpy', 'matplotlib', 'requests', 'nba_api', 'telepot', 'bs4', 'wikipedia', 'youtube-search-python', 'GoogleNews', 'emoji']
+command = ''
+for package in packages:
+    cmd('pip install '+package)
