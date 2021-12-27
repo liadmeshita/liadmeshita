@@ -1,0 +1,40 @@
+from pyftpdlib.handlers import FTPHandler
+import re
+import smtplib
+import os
+import emoji
+
+cam_emo = emoji.emojize(':video_camera:')
+stats_emo = emoji.emojize(':memo:')
+news_emo = emoji.emojize(':newspaper:')
+excl_emo = emoji.emojize(':double_exclamation_mark:')
+ice_emo = emoji.emojize(':ice:')
+
+smtp_server = "liad180804@gmail.com"
+port = 587  # For starttls
+sender_email = "nbabotil.official@gmail.com"
+password = "304050LIAD"
+
+# Create a secure SSL context
+context = "Hello to you dear user!\nWelcome to the home of the NBA...\nThere is an option to recieve information and updates\n" + 'Functions: \n' + stats_emo + 'PlayerStats (name), (year) \n' + cam_emo + 'TOP10 \n' + news_emo + 'Last Updates (name)\n' + 'FUNCTIONS INFO' + excl_emo + '\n' + ice_emo + 'PlayerStats (name), (year) - Gives you the player statistics by the desired year. \n' + ice_emo + 'TOP10 - NBA Top Plays Of The Night. \n' + ice_emo + 'Latest Updates (name) - Gives you a recent article about the player/team.'
+
+# Try to log in to server and send email
+
+server = smtplib.SMTP(smtp_server,port)
+server.ehlo() # Can be omitted
+server.starttls(context=context) # Secure the connection
+server.ehlo() # Can be omitted
+server.login(sender_email, password)
+    # TODO: Send email here
+
+
+
+# port = 465  # For SSL
+# sender_email = "nbabotil.official@gmail.com"
+# password = "304050LIAD"
+# to = "liad180804@gmail.com"
+# # Create a secure SSL context
+# context = "Hello to you dear user!\nWelcome to the home of the NBA...\nThere is an option to recieve information and updates\n" + 'Functions: \n' + stats_emo + 'PlayerStats (name), (year) \n' + cam_emo + 'TOP10 \n' + news_emo + 'Last Updates (name)\n' + 'FUNCTIONS INFO' + excl_emo + '\n' + ice_emo + 'PlayerStats (name), (year) - Gives you the player statistics by the desired year. \n' + ice_emo + 'TOP10 - NBA Top Plays Of The Night. \n' + ice_emo + 'Latest Updates (name) - Gives you a recent article about the player/team.'
+#
+# with smtplib.SMTP_SSL(to, port, context=context) as server:
+#     server.login(sender_email, password)
