@@ -1,0 +1,125 @@
+import sys
+import time
+import random
+import datetime
+import telepot
+from datetime import datetime
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+from youtubesearchpython import *
+from nba_api.stats.static import teams
+import wikipedia
+from GoogleNews import GoogleNews
+import emoji
+import smtplib
+
+bot = telepot.Bot('2038918771:AAEIA3RCL8ZqHjalfvmJJADre1zeujCVKUQ')     #the key of the bot
+
+cam_emo = emoji.emojize(':video_camera:')
+stats_emo = emoji.emojize(':memo:')
+news_emo = emoji.emojize(':newspaper:')
+excl_emo = emoji.emojize(':double_exclamation_mark:')
+ice_emo = emoji.emojize(':ice:')
+
+def handle(msg):
+    chat_id = msg['chat']['id']     #connect bot to user
+    command = msg['text']       #user's message
+    command = command.lower()
+    print(msg)
+    print('Got command: %s' % command)
+    if 'hi' in command:
+        mail = command[command.find('hi') + 3:]
+        print(mail)
+        def send_emails(receivers_list):
+            gmail_user = "nbabotil.official@gmail.com"
+            gmail_password = "zeatsuxmklveckru"
+            message = "Hello to you dear {0}!\nWelcome to the home of the NBA...\nThere is an option to recieve information and updates\nFunctions: \nPlayerStats (name), (year) \nTOP10 \nLast Updates (name)\nFUNCTIONS INFO \nPlayerStats (name), (year) - Gives you the player statistics by the desired year. \nTOP10 - NBA Top Plays Of The Night. \nLatest Updates (name) - Gives you a recent article about the player/team.".format(msg['from']['first_name'])
+
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+            server.ehlo()
+            server.login(gmail_user, gmail_password)
+            server.sendmail(gmail_user, receivers_list, message)
+        try:
+            send_emails(mail)
+            print("mail was sent")
+        except:
+            print("error")
+        bot.sendMessage(chat_id, 'hello to you dear {0}, a mail was sent into your mail account'.format(msg['from']['first_name']))
+    elif command == r"time":
+        bot.sendMessage(chat_id, 'the hour is: {0}'.format(datetime.fromtimestamp(msg['date'])))
+    elif 'random' in command:
+        x = int(command[command.find('random') + 7: command.find(',')])
+        y = int(command[command.find(',') + 1::])
+        bot.sendMessage(chat_id, random.randint(x, y))
+    elif command == 'nba' or command == 'help' or command == 'start' or command == '/start' :
+        bot.sendMessage(chat_id, 'Functions: \n' + stats_emo + 'PlayerStats (name), (year) \n' + cam_emo + 'TOP10 \n' + news_emo + 'Last Updates (name)')    #bot response
+    elif 'playerstats' in command:
+        player = command[command.find('playerstats') + 12: command.find(',')]
+        player = player[:-1].title()    #take the name
+        print(player)
+        year = command[command.find(',') + 1::]     #take the year
+        print(year)
+        try:    #in case there is no player in this year
+            url = 'https://www.basketball-reference.com/leagues/NBA_{}_per_game.html'.format(year)      #the website that I take the INF0 from
+            r = requests.get(url)
+            r_html = r.text
+            soup = BeautifulSoup(r_html, 'html.parser')     # insert to Beatiful Soup object.
+
+            table = soup.find_all(class_="full_table")
+
+            """ Extracting List of column names"""
+            head = soup.find(class_="thead")
+            column_names_raw = [head.text for item in head][0]
+            column_names_polished = column_names_raw.replace("\n", ",").split(",")[2:-1]
+
+            # bot.sendMessage(chat_id, column_names_polished)
+            print(column_names_polished)
+
+            """Extracting full list of player_data"""
+            players = []
+
+            for i in range(len(table)):
+
+                player_ = []
+
+                for td in table[i].find_all("td"):
+                    player_.append(td.text.lower())
+
+                players.append(player_)
+
+            df = pd.DataFrame(players, columns=column_names_polished).set_index("Player")
+            # cleaning the player's name from occasional special characters
+            df.index = df.index.str.replace('*', '')
+            index2 = 0
+            message = f'Player: {player.capitalize()}\n'
+            for stat in column_names_polished[1:]:
+                message += stat + ': ' + df.loc[player.lower()][index2] + '\n'
+                index2 = index2 + 1
+            bot.sendMessage(chat_id, message)
+        except:
+            bot.sendMessage(chat_id, "No player {0} in {1}".format(player, year))
+    elif command == 'top10':
+        videosSearch = CustomSearch('NBA Top Plays Of The Night', VideoSortOrder.uploadDate, limit=1)    #search by the name of the video and the day on YouTube
+        bot.sendMessage(chat_id, videosSearch.result()['result'][0]['link'])
+    elif 'team' in command:
+        team = command[command.find('team') + 5::].title()
+        print(team)
+        bot.sendMessage(chat_id,wikipedia.summary(team, sentences= 3))
+        print(wikipedia.summary(team))
+    elif 'last updates' in command:
+        name = command[command.find('last updates') + 13::]
+        print(name)
+        googlenews = GoogleNews(lang='he', region='ISRAEL')
+        googlenews.search(name)
+        bot.sendMessage(chat_id, googlenews.results()[0]['link'])
+    elif command == 'info':
+        bot.sendMessage(chat_id,'FUNCTIONS INFO' + excl_emo + '\n' + ice_emo + 'PlayerStats (name), (year) - Gives you the player statistics by the desired year. \n' + ice_emo +'TOP10 - NBA Top Plays Of The Night. \n' + ice_emo +'Latest Updates (name) - Gives you a recent article about the player/team.' )
+    else:
+        bot.sendMessage(chat_id, 'Functions: \n' + stats_emo + 'PlayerStats (name), (year) \n' + cam_emo + 'TOP10 \n' + news_emo + 'Last Updates (name)')
+
+bot.message_loop(handle)
+print('I am listening ...')
+
+while 1:
+    time.sleep(10)
