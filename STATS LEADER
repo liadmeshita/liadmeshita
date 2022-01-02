@@ -1,0 +1,21 @@
+
+from nba_api.stats import endpoints
+
+data = endpoints.leagueleaders.LeagueLeaders()
+# Our "data" variable now has built in functions such as creating a dataframe for our data
+df = data.league_leaders.get_data_frame()
+
+
+x = (df)["AST"].sort_values(ascending=False)
+#print(x)
+
+def get_num_by_name(rnk, df):
+    i = 0
+    for rank in df.RANK:
+        if rnk == rank:
+            return i
+        i+=1
+    return i
+
+player_number = get_num_by_name(input(), df)
+print(df.PLAYER[player_number])
