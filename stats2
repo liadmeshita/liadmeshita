@@ -1,0 +1,25 @@
+
+from nba_api.stats import endpoints
+
+data = endpoints.leagueleaders.LeagueLeaders()
+# Our "data" variable now has built in functions such as creating a dataframe for our data
+df = data.league_leaders.get_data_frame()
+
+ast = ""
+name = ""
+tot_msg = ""
+x = (df)["AST"].sort_values(ascending=False)
+player_rnk = int(x.to_string()[slice(2)])
+ast = df.iloc[player_rnk, :]["AST"]
+name = df.iloc[player_rnk, :]["PLAYER"]
+print(name)
+print(ast)
+rnk_list = x.to_string()
+print(rnk_list)
+pos = 0
+# for line in rnk_list:
+#     if pos < 5:
+#         player_rnk = int(x.to_string()[slice(2)])
+#         name = df.iloc[player_rnk, :]["PLAYER"]
+#         print(name)
+#         pos = pos + 1
