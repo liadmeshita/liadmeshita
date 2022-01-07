@@ -1,0 +1,41 @@
+
+from nba_api.stats import endpoints
+
+data = endpoints.leagueleaders.LeagueLeaders()
+# Our "data" variable now has built in functions such as creating a dataframe for our data
+df = data.league_leaders.get_data_frame()
+
+ast = ""
+name = ""
+tot_msg = ""
+x = (df)["AST"].sort_values(ascending=False)
+rnk_list = x.to_string()
+player_rnk = int(rnk_list[: rnk_list.find(" ")])
+ast = df.iloc[player_rnk, :]["AST"]
+name = df.iloc[18, :]["PLAYER"]
+print(name)
+print(ast)
+rnk_list = x.to_string()
+#print("\n".join(rnk_list.split("\n")[3:]))
+a = "hi\nto\nyou"
+print("\n".join(a.split("\n")[0:]))
+pos = 0
+for line in rnk_list:
+    if pos < 5:
+        player_rnk = int(rnk_list[: rnk_list.find(" ")])
+        name = df.iloc[player_rnk, :]["PLAYER"]
+        print(name)
+        pos = pos + 1
+        rnk_list = "\n".join(rnk_list.split("\n")[1:])
+print("----")
+y = (df)["PTS"].sort_values(ascending=False)
+rnk_list2 = y.to_string()
+player_rnk2 = int(rnk_list2[: rnk_list2.find(" ")])
+pos2 = 0
+for line2 in rnk_list2:
+    if pos2 < 5:
+        player_rnk2 = int(rnk_list2[: rnk_list2.find(" ")])
+        name = df.iloc[player_rnk2, :]["PLAYER"]
+        print(name)
+        pos2 = pos2 + 1
+        rnk_list2 = "\n".join(rnk_list2.split("\n")[1:])
