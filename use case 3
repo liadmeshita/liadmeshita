@@ -1,0 +1,33 @@
+@startuml
+
+:user: as u
+
+package NBA_BOT_IL {
+  usecase "PlayerStats" as UC1
+  usecase "TOP10" as UC2
+  usecase "Last Updates" as UC3
+  usecase "PTS Leaders" as UC4
+  usecase "AST Leaders" as UC5
+  usecase "REB Leaders" as UC6
+  usecase "ROSTER" as UC7
+  usecase "League Standing" as UC8
+  package Schedual {
+    usecase "TEAM/PLAYER" as UC9
+  }
+}
+
+u <--> NBA_BOT_IL : input/output
+
+:NBA_API: as nbapi
+
+nbapi --> UC1 : information
+nbapi --> UC2 : information
+nbapi --> UC3 : information
+nbapi --> UC4 : information
+nbapi --> UC5 : information
+nbapi --> UC6 : information
+nbapi --> UC7 : information
+nbapi --> UC8 : information
+Schedual --> u
+
+@enduml
