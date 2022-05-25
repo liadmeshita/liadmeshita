@@ -35,3 +35,26 @@ g --> UC8 : information
 
 
 @enduml
+
+
+@startuml
+title Sequence Diagram - Messages
+
+
+
+actor   	Admin   	as ad
+participant BOT as bot
+database Replit as repl
+
+
+
+
+ad -> bot ++ : meesage
+bot --> repl --++ : Run handel script- Input analysis  
+repl --> bot -- : Send output and return to main screen- wait for input
+
+
+
+
+
+@enduml
