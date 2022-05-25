@@ -34,6 +34,16 @@ nbapi --> UC10 : information
 g --> UC8 : information
 
 
+
+
+@startuml
+msg --> Sender_Name : get_info
+
+msg : user_data
+Sender_Name : UserName
+
+@enduml
+
 @enduml
 
 
