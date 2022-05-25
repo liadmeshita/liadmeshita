@@ -68,3 +68,15 @@ repl --> bot -- : Send output and return to main screen- wait for input
 
 
 @enduml
+
+
+
+@startuml
+bot --> Send : get_communication
+
+bot : key
+bot : chat_id
+Send : token
+Send : road
+
+@enduml
