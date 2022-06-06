@@ -1,0 +1,319 @@
+import sys
+import time
+import random
+import datetime
+import telepot
+from datetime import datetime
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+from youtubesearchpython import *
+from GoogleNews import GoogleNews
+import emoji
+import smtplib
+import numpy as np
+from sklearn import linear_model
+from nba_api.stats import endpoints
+from matplotlib import pyplot as plt
+from waitress import serve
+import app1
+from telegrambot import Send
+from User import Sender_Name
+import threading
+
+bot = telepot.Bot('2038918771:AAEIA3RCL8ZqHjalfvmJJADre1zeujCVKUQ')     #the key of the bot
+
+cam_emo = emoji.emojize(':video_camera:')
+stats_emo = emoji.emojize(':memo:')
+news_emo = emoji.emojize(':newspaper:')
+excl_emo = emoji.emojize(':double_exclamation_mark:')
+ice_emo = emoji.emojize(':ice:')
+dice_emo = emoji.emojize(':game_die:')
+medal_emo = emoji.emojize(':1st_place_medal:')
+teamate_emo = emoji.emojize(':people_hugging:')
+gorilla_emo = emoji.emojize(':gorilla:')
+roster_emo = emoji.emojize(':men_with_bunny_ears:')
+table_emo = emoji.emojize(':bar_chart:')
+teach_emo = emoji.emojize(':teacher:')
+c = 0
+m = ''
+lst= []
+
+def handle(msg):
+    user = Sender_Name(msg['from']['username'])
+    videosSearch = CustomSearch('NBA Top Plays Of The Night', VideoSortOrder.uploadDate, limit=1)  # search by the name of the video and the day on YouTube
+    global c, m
+    chat_id = msg['chat']['id']     #connect bot to user
+    bot2 = Send('2038918771:AAEIA3RCL8ZqHjalfvmJJADre1zeujCVKUQ', chat_id)
+    command = msg['text']       #user's message
+    command = command.lower()
+    print(msg)
+    print('Got command: %s' % command)
+    if 'hi' in command:
+        mail = command[command.find('hi') + 3:]
+        print(mail)
+        def send_emails(receivers_list):
+            gmail_user = "nbabotil.official@gmail.com"
+            gmail_password = "zeatsuxmklveckru"
+            message = "Hello to you dear {0}!\nWelcome to the home of the NBA...\nThere is an option to recieve information and updates\nFunctions: \nPlayerStats (name), (year) \nTOP10 \nLast Updates (name)\nFUNCTIONS INFO \nPlayerStats (name), (year) - Gives you the player statistics by the desired year. \nTOP10 - NBA Top Plays Of The Night. \nLatest Updates (name) - Gives you a recent article about the player/team.".format(msg['from']['first_name'])
+
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+            server.ehlo()
+            server.login(gmail_user, gmail_password)
+            server.sendmail(gmail_user, receivers_list, message)
+        try:
+            send_emails(mail)
+            print("mail was sent")
+        except:
+            print("error")
+        user = Sender_Name(msg['from']['username'])
+        user.set_mail(mail)
+        bot.sendMessage(chat_id, 'Hello to you dear {0}'.format(msg['from']['first_name']))
+    elif command == r"time":
+        bot.sendMessage(chat_id, 'the hour is: {0}'.format(datetime.fromtimestamp(msg['date'])))
+    elif 'random' in command:
+        x = int(command[command.find('random') + 7: command.find(',')])
+        y = int(command[command.find(',') + 1::])
+        bot.sendMessage(chat_id, random.randint(x, y))
+    elif 'graph' in command:
+        name = (command[command.find('graph') + 6::]).title()
+        print(name)
+
+        def get_num_by_name(name, df):
+            i = 0
+            for player in df.PLAYER:
+                if name == player:
+                    return i
+                i += 1
+            return i
+
+        # Here we access the leagueleaders module through endpoints & assign the class to "data"
+        data = endpoints.leagueleaders.LeagueLeaders()
+
+        # Our "data" variable now has built in functions such as creating a dataframe for our data
+        df = data.league_leaders.get_data_frame()
+
+        df.head()
+
+        # First we need to get per game stats.
+        # We divide each variable by games played (GP) to get per game average
+        x, y = df.AST / df.GP, df.PTS / df.GP
+
+        # we have to reshape our array from 1d to 2d.
+        # The proper shaped array is an input requirement for the linear model
+        # reshaping is usually an issue when using 1 x variable
+        x = np.array(x).reshape(-1, 1)
+        y = np.array(y).reshape(-1, 1)
+
+        """ Build and fit linea regression model """
+        # create an object that contains the linear model class
+        # Fit our modeling using FGA (x) and PPG (y)
+        model = linear_model.LinearRegression()
+        model.fit(x, y)
+
+        # Get our r2 value and round it to 2 decimals. How much variance is exaplained?
+        # Get our predicted y values for x
+        r2 = round(model.score(x, y), 2)
+        predicted_y = model.predict(x)
+
+        plt.scatter(x, y, s=15, alpha=.5)
+        # Scatterplot:  Specfiy size(s) and transparency(alpha) of dots
+        plt.plot(x, predicted_y, color='black')  # line: Add line for regression line w/ predicted values
+        plt.title('NBA - Relationship Between FGA and PPG')  # Give it a title
+        plt.xlabel('AST per Game')  # Label x-axis
+        plt.ylabel('Points Per Game')  # Label y-axis
+        # plt.text(10,25, f'R2={r2}')
+
+        player_number = get_num_by_name(name, df)
+        plt.annotate(df.PLAYER[player_number],
+                     # This the name of the top scoring player. Refer to the .head() from earlier
+                     (x[player_number], y[player_number]),  # This is the point we want to annotate.
+                     (x[player_number] - 3, y[player_number] - 2),  # These are coords for the text
+                     arrowprops=dict(arrowstyle='-'))  # Here we use a flat line for the arrow '-'
+
+        # Finally, let's save an image called 'graph.png'.
+        # We'll set the dpi (dots per inch) to 300, so we have a nice looking picture.
+        plt.savefig("AST(PTS).png",
+                    bbox_inches="tight",
+                    pad_inches=1,
+                    transparent=True,
+                    facecolor="g",
+                    edgecolor='w',
+                    orientation='landscape')
+        bot2.send_plot(plt)
+    elif command == 'sign in' and (msg['from']['username'] not in lst):
+        lst.append(user.get_UserName())
+        for u in lst:
+            c = c + 1
+        for name in lst:
+            m = m + name + ", "
+        bot.sendMessage(chat_id, 'Sign in seccessfully')
+    elif command == 'data' and msg['from']['username'] == 'liadmeshita':
+        tot_msg = 'The count is- ' + str(c) + ", The users are: " + m
+        bot.sendMessage(chat_id, tot_msg)
+    elif command == 'sign in' and (msg['from']['username'] in lst):
+        bot.sendMessage(chat_id, "You are in the system:)")
+    elif 'playerstats' in command:
+        player = command[command.find('playerstats') + 12: command.find(',')]
+        player = player[:-1].title()    #take the name
+        print(player)
+        year = command[command.find(',') + 1::]     #take the year
+        print(year)
+        try:    #in case there is no player in this year
+            url = 'https://www.basketball-reference.com/leagues/NBA_{}_per_game.html'.format(year)      #the website that I take the INF0 from
+            r = requests.get(url)
+            r_html = r.text
+            soup = BeautifulSoup(r_html, 'html.parser')     # insert to Beatiful Soup object.
+
+            table = soup.find_all(class_="full_table")
+
+            """ Extracting List of column names"""
+            head = soup.find(class_="thead")
+            column_names_raw = [head.text for item in head][0]
+            column_names_polished = column_names_raw.replace("\n", ",").split(",")[2:-1]
+
+            # bot.sendMessage(chat_id, column_names_polished)
+            print(column_names_polished)
+
+            """Extracting full list of player_data"""
+            players = []
+
+            for i in range(len(table)):
+
+                player_ = []
+
+                for td in table[i].find_all("td"):
+                    player_.append(td.text.lower())
+
+                players.append(player_)
+
+            df = pd.DataFrame(players, columns=column_names_polished).set_index("Player")
+            # cleaning the player's name from occasional special characters
+            df.index = df.index.str.replace('*', '')
+            index2 = 0
+            message = f'Player: {player.capitalize()}\n'
+            for stat in column_names_polished[1:]:
+                message += stat + ': ' + df.loc[player.lower()][index2] + '\n'
+                index2 = index2 + 1
+            bot.sendMessage(chat_id, message)
+        except:
+            bot.sendMessage(chat_id, "No player {0} in {1}".format(player, year))
+    elif command == 'top10':
+        bot.sendMessage(chat_id, videosSearch.result()['result'][0]['link'])
+    elif 'last updates' in command:
+        name = command[command.find('last updates') + 13::]
+        print(name)
+        googlenews = GoogleNews(lang='he', region='ISRAEL')
+        googlenews.search(name)
+        bot.sendMessage(chat_id, googlenews.results()[0]['link'])
+    elif command == 'info':
+        bot.sendMessage(chat_id, 'FUNCTIONS INFO' + excl_emo + '\n' + ice_emo + 'PlayerStats (name), (year) - Gives you the player statistics by the desired year. \n' + ice_emo +'TOP10 - NBA Top Plays Of The Night. \n' + ice_emo +'Latest Updates (name) - Gives you a recent article about the player/team. \n' + ice_emo + 'PTS LEADERS - Gives you the top 5 scorers. \n' + ice_emo + 'AST LEADERS - Gives you the top 5 passers. \n' + ice_emo + 'REB LEADERS - Gives you the top 5 rebounders.\n' + ice_emo + 'ROSTER (Team(nick-name)) - Gives you the roster of the team.\n' + ice_emo + 'LEAGUE STANDING - Gives you a link to the NBA standing.\n' + ice_emo + 'Graph - Gives you a graph of PTS(AST).')
+    elif command == 'pts leaders':
+        data = endpoints.leagueleaders.LeagueLeaders()
+        df = data.league_leaders.get_data_frame()
+        y = (df)["PTS"].sort_values(ascending=False)
+        rnk_list2 = y.to_string()
+        player_rnk2 = int(rnk_list2[: rnk_list2.find(" ")])
+        pos2 = 0
+        pts_msg = "PTS LEADERS" + dice_emo + '\n' + medal_emo
+        for line2 in rnk_list2:
+            if pos2 < 5:
+                player_rnk2 = int(rnk_list2[: rnk_list2.find(" ")])
+                name = df.iloc[player_rnk2, :]["PLAYER"]
+                pts_msg = pts_msg + name +'\n' + ' '
+                pos2 = pos2 + 1
+                rnk_list2 = "\n".join(rnk_list2.split("\n")[1:])
+        bot.sendMessage(chat_id, pts_msg)
+    elif command == 'ast leaders':
+        data = endpoints.leagueleaders.LeagueLeaders()
+        df = data.league_leaders.get_data_frame()
+        x = (df)["AST"].sort_values(ascending=False)
+        rnk_list = x.to_string()
+        player_rnk = int(rnk_list[: rnk_list.find(" ")])
+        pos = 0
+        ast_msg = "AST LEADERS" + teamate_emo + '\n' + medal_emo
+        for line in rnk_list:
+            if pos < 5:
+                player_rnk = int(rnk_list[: rnk_list.find(" ")])
+                name = df.iloc[player_rnk, :]["PLAYER"]
+                ast_msg = ast_msg + name +'\n' + ' '
+                pos = pos + 1
+                rnk_list = "\n".join(rnk_list.split("\n")[1:])
+        bot.sendMessage(chat_id, ast_msg)
+    elif command == 'reb leaders':
+        data = endpoints.leagueleaders.LeagueLeaders()
+        df = data.league_leaders.get_data_frame()
+        y = (df)["REB"].sort_values(ascending=False)
+        rnk_list2 = y.to_string()
+        player_rnk2 = int(rnk_list2[: rnk_list2.find(" ")])
+        pos2 = 0
+        reb_msg = "REB LEADERS" + gorilla_emo + '\n' + medal_emo
+        for line2 in rnk_list2:
+            if pos2 < 5:
+                player_rnk2 = int(rnk_list2[: rnk_list2.find(" ")])
+                name = df.iloc[player_rnk2, :]["PLAYER"]
+                reb_msg = reb_msg + name + '\n' + ' '
+                pos2 = pos2 + 1
+                rnk_list2 = "\n".join(rnk_list2.split("\n")[1:])
+        bot.sendMessage(chat_id, reb_msg)
+    elif command == 'standing':
+        link = 'https://www.google.com/search?q=nba+standings&rlz=1C1CHZL_enIL744IL744&oq=NBA+STA&aqs=chrome.0.0i433i512j0i131i433i512j69i57j0i512l4j69i60.3606j0j7&sourceid=chrome&ie=UTF-8#sie=lg;/g/11q1vtzf8w;3;/m/05jvx;st;fp;1;;'
+        msg = 'NBA STANDING' + table_emo + '\n' + link
+        bot.sendMessage(chat_id, msg)
+    elif "roster" in command:
+        try:
+            data = endpoints.leagueleaders.LeagueLeaders()
+            # Our "data" variable now has built in functions such as creating a dataframe for our data
+            df = data.league_leaders.get_data_frame()
+            t = command[command.find(' ') + 1::]
+            team = t.capitalize()
+            print(team)
+            x = df
+            # print(rank_team)
+            teams = {"Rockets": "HOU", "Clippers": "LAC",
+                     "Lakers": "LAL", "Bucks": "MIL",
+                     "Celtics": "BOS", "Nets": "BKN",
+                     "Warriors": "GSW", "Suns": "PHX",
+                     "Bulls": "CHI", "Jazz": "UTA",
+                     "Grizzlies": "MEM", "Heat": "MIA",
+                     "76ers": "PHI", "Cavaliers": "CLE",
+                     "Mavericks": "DAL", "Raptors": "TOR",
+                     "Nuggets": "DEN", "Hornets": "CHA",
+                     "Timberwolves": "MIN", "Wizards": "WAS",
+                     "Knicks": "NYK", "Hawks": "ATL",
+                     "Trail Blazers": "POR", "Spurs": "SAS",
+                     "Kings": "SAC", "Pacers": "IND",
+                     "Pelicans": "NOP", "Thunder": "OKC",
+                     "Pistons": "DET", "Magic": "ORL"}
+            team_nick = teams[team]
+            rnk = 0
+            tot_roster = team_nick + " ROSTER" + roster_emo
+            for line in range(585):
+                if (x.iloc[rnk, 3] == team_nick):
+                    name = df.iloc[rnk, :]["PLAYER"]
+                    tot_roster = tot_roster + "\n" + name
+                    rnk = rnk + 1
+                else:
+                    rnk = rnk + 1
+            bot.sendMessage(chat_id, tot_roster)
+        except:
+            error_msg = 'ERROR, TRY AGAIN, FOR EXAMPLE- roster Celtics'
+            bot.sendMessage(chat_id, error_msg)
+    else:
+        bot.sendMessage(chat_id, 'Functions' + excl_emo + '\n' + stats_emo + 'PlayerStats (name), (year) \n' + cam_emo + 'TOP10 \n' + news_emo + 'Last Updates (name) \n' + dice_emo + 'PTS LEADERS \n' + teamate_emo + 'AST LEADERS \n' + gorilla_emo + 'REB LEADERS\n' + roster_emo + 'ROSTER (Team(nick-name)\n' + table_emo + 'STANDING\n' + teach_emo + 'Graph(player name)\n' + ice_emo + 'INFO')
+
+    def f(f_stop):
+        for u in lst:
+            bot.sendMessage(chat_id, videosSearch.result()['result'][0]['link'])
+        if not f_stop.is_set():
+            threading.Timer(5, f, [f_stop]).start()
+    f_stop = threading.Event()
+    f(f_stop)
+
+bot.message_loop(handle)
+print('I am listening ...')
+
+
+while 1:
+    time.sleep(10)
+    serve(app1.app, host='0.0.0.0', port=8443)
