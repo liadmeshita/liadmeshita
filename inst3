@@ -1,6 +1,13 @@
-from os import system as cmd
+class Sender_Name:
+    def __init__(self, username):
+        self.UserNme = username
+        self.mail = ''
 
-packages = ['pandas', 'scikit-learn', 'numpy', 'matplotlib', 'requests', 'nba_api', 'telepot', 'bs4', 'wikipedia', 'youtube-search-python', 'GoogleNews', 'emoji']
-command = ''
-for package in packages:
-    cmd('pip install '+package)
+    def get_UserName(self):
+        return self.UserNme
+
+    def set_mail(self, mail2):
+        self.mail = mail2
+
+    def get_mail(self):
+        return self.mail
